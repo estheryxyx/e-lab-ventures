@@ -1,1 +1,734 @@
-<h1>hello</h1>
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ledgerline: personal finance</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#EDF1EE; --panel:#F8FAF8; --ink:#172428; --muted:#5B6E70; --line:#CBD6D0;
+  --accent:#1E4A43; --on-accent:#F8FAF8; --good:#1E6B4F; --bad:#A23B54; --warn:#8A6100;
+  --inc:#1E6B4F; --exp:#8C3F5F; --focus:#2B6CB0;
+  --display:'Bricolage Grotesque','Avenir Next','Segoe UI',system-ui,sans-serif;
+  --body:'IBM Plex Sans','Segoe UI',system-ui,-apple-system,sans-serif;
+}
+@media (prefers-color-scheme:dark){
+  :root{--paper:#0F1A1B; --panel:#16252A; --ink:#E4ECE8; --muted:#93A8A6; --line:#2A3D3F;
+    --accent:#8CC7B4; --on-accent:#0F1A1B; --good:#6FCF9F; --bad:#F08AA3; --warn:#E0B44A;
+    --inc:#6FCF9F; --exp:#D77A9B; --focus:#7DB4F0;}
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--paper);color:var(--ink);font:15px/1.5 var(--body);-webkit-font-smoothing:antialiased}
+h1,h2,h3{font-family:var(--display);margin:0;font-weight:700;letter-spacing:-.01em}
+.num{font-variant-numeric:tabular-nums}
+.muted{color:var(--muted)}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+
+.app{display:grid;grid-template-columns:290px minmax(0,1fr);min-height:100vh}
+aside{background:var(--panel);border-right:1px solid var(--line);padding:24px 18px;display:flex;flex-direction:column;gap:18px}
+.brand{font-family:var(--display);font-size:24px;font-weight:700}
+.side-h{font-size:13px;color:var(--muted);font-weight:600}
+.acct{display:grid;grid-template-columns:1fr auto;text-align:left;width:100%;background:none;border:0;
+  border-left:5px solid var(--c);padding:6px 4px 6px 12px;margin-bottom:8px;cursor:pointer;border-radius:0 6px 6px 0}
+.acct:hover{background:color-mix(in srgb,var(--c) 10%,transparent)}
+.acct .an{font-weight:600}
+.acct .ac{font-family:var(--display);font-weight:700;color:var(--muted)}
+.acct .ab{grid-column:1/-1;font-family:var(--display);font-size:20px;font-variant-numeric:tabular-nums}
+.acct .abb{grid-column:1/-1;font-size:13px;color:var(--muted)}
+.side-foot{margin-top:auto;font-size:13px;color:var(--muted);display:grid;gap:8px}
+
+main{padding:24px clamp(16px,3vw,40px) 60px;min-width:0}
+.top{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;margin-bottom:22px}
+nav.tabs{display:flex;flex-wrap:wrap;gap:4px}
+nav.tabs button{background:none;border:0;padding:8px 12px;border-radius:8px;cursor:pointer;color:var(--muted);font-weight:500}
+nav.tabs button[aria-current=page]{background:var(--accent);color:var(--on-accent)}
+.tools{display:flex;gap:8px;flex-wrap:wrap}
+
+.btn{background:var(--accent);color:var(--on-accent);border:0;border-radius:8px;padding:8px 14px;font-weight:600;cursor:pointer}
+.btn.ghost{background:none;color:var(--ink);border:1px solid var(--line)}
+.btn.danger{background:none;color:var(--bad);border:1px solid var(--bad)}
+.btn.small{padding:4px 10px;font-size:13px}
+.btn:disabled{opacity:.5;cursor:default}
+
+section.block{margin-top:34px}
+section.block>h2{font-size:20px;margin-bottom:12px}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.row.end{justify-content:flex-end}
+.grow{flex:1}
+.head-row{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+
+.hero .lbl{color:var(--muted);font-weight:500}
+.hero .big{font-family:var(--display);font-size:clamp(40px,7vw,68px);font-weight:700;line-height:1.05;font-variant-numeric:tabular-nums}
+.seg{display:flex;height:22px;border-radius:6px;overflow:hidden;margin:18px 0 10px;background:var(--line)}
+.seg i{display:block;height:100%}
+.legend{display:flex;flex-wrap:wrap;gap:6px 22px}
+.legend span{display:inline-flex;gap:8px;align-items:center;font-size:14px}
+.legend b{width:12px;height:12px;border-radius:3px;display:inline-block}
+
+.kpis{display:flex;flex-wrap:wrap;gap:0;margin-top:30px}
+.kpis>div{padding:0 32px 0 0;margin-right:32px;border-right:1px solid var(--line)}
+.kpis>div:last-child{border:0}
+.kpis .k{color:var(--muted);font-size:14px}
+.kpis .v{font-family:var(--display);font-size:28px;font-weight:700;font-variant-numeric:tabular-nums}
+.pos{color:var(--good)} .neg{color:var(--bad)}
+
+.split{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:34px}
+.tablewrap{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th{font-weight:600;color:var(--muted);text-align:left;padding:8px 10px;border-bottom:2px solid var(--line);white-space:nowrap}
+td{padding:9px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+td.r,th.r{text-align:right;font-variant-numeric:tabular-nums}
+tfoot td{font-weight:600;border-top:2px solid var(--line);border-bottom:0}
+tr.click{cursor:pointer}
+tr.click:hover td{background:color-mix(in srgb,var(--accent) 7%,transparent)}
+
+.bars{display:grid;gap:10px}
+.bar .t{display:flex;justify-content:space-between;font-size:14px;margin-bottom:3px}
+.bar .tr{height:10px;background:var(--line);border-radius:5px;overflow:hidden}
+.bar .tr i{display:block;height:100%;background:var(--accent);border-radius:5px}
+.bar .tr i.warn{background:var(--exp)}
+svg.chart{width:100%;height:auto;display:block}
+svg.chart text{fill:var(--muted);font-size:11px;font-family:var(--body)}
+.chart .inc{fill:var(--inc)} .chart .exp{fill:var(--exp)}
+
+.item{padding:14px 0;border-bottom:1px solid var(--line);display:grid;gap:8px}
+.item .h{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:baseline}
+.item .h strong{font-family:var(--display);font-size:18px}
+.pill{font-size:12px;padding:2px 8px;border-radius:99px;border:1px solid var(--line);color:var(--muted)}
+.pill.ok{color:var(--good);border-color:var(--good)} .pill.no{color:var(--bad);border-color:var(--bad)}
+.warn-note{color:var(--warn);margin:0 0 14px}
+.status{font-size:13px;color:var(--muted);margin:4px 0 0}
+.empty{padding:22px 0;color:var(--muted)}
+.filters{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+select,input,textarea{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:8px 10px;width:100%}
+.filters select,.filters input{width:auto}
+
+dialog{border:1px solid var(--line);border-radius:14px;background:var(--panel);color:var(--ink);padding:22px;width:min(480px,94vw);max-height:92vh;overflow:auto}
+dialog::backdrop{background:rgba(10,20,20,.5)}
+dialog h2{margin-bottom:14px;font-size:22px}
+.fld{display:grid;gap:4px;margin-bottom:12px}
+.fld>span{font-weight:500;font-size:14px}
+.fld small{color:var(--muted)}
+.err{color:var(--bad);min-height:1.2em;margin:8px 0 0}
+
+@media (max-width:860px){
+  .app{grid-template-columns:1fr}
+  aside{border-right:0;border-bottom:1px solid var(--line)}
+  .kpis>div{border:0;padding:0;margin:0 28px 14px 0}
+}
+</style>
+</head>
+<body>
+<div class="app" id="app"></div>
+<dialog id="dlg"></dialog>
+<datalist id="curs"></datalist>
+<input type="file" id="imp" accept=".json" hidden>
+
+<script>
+/* ---------- state ---------- */
+const KEY = 'ledgerline.v1';
+const CURRENCIES = ['GBP','USD','EUR','MYR','SGD','IDR','JPY','AUD','CAD','CHF','HKD','CNY','INR','THB','KRW','NZD'];
+const COLORS = ['#1E4A43','#C48F0B','#8C3F5F','#2B6CB0','#7FA38F','#B5651D','#5B4B8A','#3E7C8C'];
+const $ = s => document.querySelector(s);
+const uid = () => Math.random().toString(36).slice(2, 10);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+const defaults = () => ({
+  base: 'GBP', finnhubKey: '',
+  incomeCats: ['Salary','Internship','Scholarship','Grant','Interest','Gifts','Other income'],
+  expenseCats: ['Rent','Groceries','Eating out','Transport','Travel','Subscriptions','Study','Health','Shopping','Social','Other'],
+  accounts: [], tx: [], holdings: [], goals: [], big: [],
+  rates: {}, ratesDate: '', manualRates: {}, assumedNet: null
+});
+let S = load();
+function load(){ try { const s = JSON.parse(localStorage.getItem(KEY)); if (s) return Object.assign(defaults(), s); } catch(e){} return defaults(); }
+function save(){ try { localStorage.setItem(KEY, JSON.stringify(S)); } catch(e){} }
+
+let view = 'overview';
+let month = ym(new Date());
+let filt = { month: '', acct: '', type: '' };
+let status = '';
+let busy = false;
+
+/* ---------- helpers ---------- */
+function ym(d){ return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0'); }
+function todayStr(){ const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); }
+function addMonths(key, n){ const [y, m] = key.split('-').map(Number); return ym(new Date(y, m - 1 + n, 1)); }
+function monthLabel(k, long){ const [y, m] = k.split('-').map(Number); return new Date(y, m - 1, 1).toLocaleDateString(undefined, long ? {month:'long', year:'numeric'} : {month:'short'}); }
+function monthsUntil(key){ const now = new Date(); const [y, m] = key.split('-').map(Number); return Math.max(1, (y - now.getFullYear()) * 12 + (m - 1 - now.getMonth())); }
+function fmt(n, c, dp){
+  if (!isFinite(n)) n = 0;
+  if (dp === undefined) dp = Math.abs(n) >= 1000 ? 0 : 2;
+  try { return new Intl.NumberFormat(undefined, {style:'currency', currency:c, minimumFractionDigits:dp, maximumFractionDigits:dp}).format(n); }
+  catch(e){ return c + ' ' + n.toFixed(dp); }
+}
+const acct = id => S.accounts.find(a => a.id === id);
+const acctIndex = id => Math.max(0, S.accounts.findIndex(a => a.id === id));
+
+/* ---------- currency ---------- */
+// rates[c] = units of currency c per 1 unit of base currency
+function rate(c){ if (c === S.base) return 1; return S.rates[c] || S.manualRates[c] || 0; }
+function toBase(a, c){ const r = rate(c); return r ? a / r : a; }
+function conv(a, from, to){ if (from === to) return a; const rf = rate(from), rt = rate(to); return (rf && rt) ? a / rf * rt : NaN; }
+function usedCurrencies(){
+  const s = new Set([S.base]);
+  S.accounts.forEach(a => s.add(a.currency));
+  S.holdings.forEach(h => s.add(h.currency));
+  S.goals.forEach(g => s.add(g.currency));
+  S.big.forEach(b => s.add(b.currency));
+  return [...s];
+}
+const missingRates = () => usedCurrencies().filter(c => !rate(c));
+
+/* ---------- calculations ---------- */
+function balance(a){
+  let b = +a.opening || 0;
+  for (const t of S.tx){
+    if (t.accountId === a.id){
+      if (t.type === 'income') b += t.amount; else b -= t.amount; // expense or transfer out
+    }
+    if (t.type === 'transfer' && t.toAccountId === a.id) b += (t.toAmount ?? t.amount);
+  }
+  return b;
+}
+function cashTotal(){ return S.accounts.reduce((s, a) => s + toBase(balance(a), a.currency), 0); }
+const holdingValue = h => (+h.qty || 0) * (+h.price || 0);
+function investTotal(){ return S.holdings.reduce((s, h) => s + toBase(holdingValue(h), h.currency), 0); }
+function monthTotals(k){
+  let inc = 0, exp = 0;
+  for (const t of S.tx){
+    if (!t.date.startsWith(k)) continue;
+    const a = acct(t.accountId); if (!a) continue;
+    if (t.type === 'income') inc += toBase(t.amount, a.currency);
+    else if (t.type === 'expense') exp += toBase(t.amount, a.currency);
+  }
+  return { inc, exp };
+}
+function autoNet(){
+  const cur = ym(new Date()); const vals = [];
+  for (let i = 1; i <= 3; i++){
+    const k = addMonths(cur, -i);
+    if (S.tx.some(t => t.date.startsWith(k) && t.type !== 'transfer')){ const m = monthTotals(k); vals.push(m.inc - m.exp); }
+  }
+  if (!vals.length){ const m = monthTotals(cur); return m.inc - m.exp; }
+  return vals.reduce((a, b) => a + b, 0) / vals.length;
+}
+function projection(){
+  const net = S.assumedNet != null && !isNaN(S.assumedNet) ? S.assumedNet : autoNet();
+  const nowKey = ym(new Date()); let bal = cashTotal(); const rows = [];
+  for (let i = 0; i < 24; i++){
+    const k = addMonths(nowKey, i);
+    if (i > 0) bal += net;
+    const due = S.big.filter(b => b.date === k || (i === 0 && b.date < nowKey));
+    const out = due.reduce((s, b) => s + toBase(b.cost, b.currency), 0);
+    bal -= out;
+    rows.push({ k, bal, out, due });
+  }
+  return { rows, net };
+}
+function bigFunding(){
+  const remaining = {}; S.accounts.forEach(a => remaining[a.id] = balance(a));
+  return [...S.big].sort((a, b) => a.date.localeCompare(b.date)).map(b => {
+    const a = acct(b.accountId);
+    if (!a) return { b, a: null };
+    const cost = conv(b.cost, b.currency, a.currency);
+    if (isNaN(cost)) return { b, a, unknown: true };
+    const before = remaining[a.id]; const after = before - cost; remaining[a.id] = after;
+    const short = after < 0 ? Math.min(cost, -after) : 0;
+    const perMonth = toBase(short, a.currency) / monthsUntil(b.date);
+    return { b, a, cost, short, perMonth, covered: short === 0 };
+  });
+}
+function goalProgress(g){
+  let saved = +g.saved || 0;
+  if (g.linkedAccountId && acct(g.linkedAccountId)){
+    const a = acct(g.linkedAccountId); const c = conv(balance(a), a.currency, g.currency);
+    saved = isNaN(c) ? 0 : c;
+  }
+  const left = Math.max(0, g.target - saved);
+  const months = g.deadline ? monthsUntil(g.deadline.slice(0, 7)) : 0;
+  return { saved, left, pct: g.target ? Math.min(100, saved / g.target * 100) : 0, months, perMonth: months ? left / months : 0 };
+}
+
+/* ---------- live data ---------- */
+async function refreshRates(){
+  try {
+    const r = await fetch('https://api.frankfurter.dev/v1/latest?base=' + encodeURIComponent(S.base));
+    if (!r.ok) throw new Error('rates');
+    const j = await r.json();
+    S.rates = Object.assign({}, j.rates, { [S.base]: 1 }); S.ratesDate = j.date; return true;
+  } catch(e){ return false; }
+}
+async function refreshPrices(){
+  const now = new Date().toISOString(); let fails = 0;
+  const crypto = S.holdings.filter(h => h.kind === 'crypto' && h.symbol);
+  const byCur = {};
+  crypto.forEach(h => (byCur[h.currency.toLowerCase()] ||= []).push(h));
+  for (const [cur, list] of Object.entries(byCur)){
+    try {
+      const ids = [...new Set(list.map(h => h.symbol.toLowerCase()))].join(',');
+      const r = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=' + encodeURIComponent(ids) + '&vs_currencies=' + cur);
+      const j = await r.json();
+      list.forEach(h => { const p = j[h.symbol.toLowerCase()]?.[cur]; if (p != null){ h.price = p; h.updated = now; h.err = ''; } else { h.err = 'Coin id or currency not found'; fails++; } });
+    } catch(e){ list.forEach(h => { h.err = 'Could not reach CoinGecko'; fails++; }); }
+  }
+  for (const h of S.holdings.filter(h => h.kind === 'stock' && h.symbol)){
+    if (!S.finnhubKey){ h.err = 'Add a Finnhub API key in Settings'; fails++; continue; }
+    try {
+      const r = await fetch('https://finnhub.io/api/v1/quote?symbol=' + encodeURIComponent(h.symbol.toUpperCase()) + '&token=' + encodeURIComponent(S.finnhubKey));
+      const j = await r.json();
+      if (j && j.c > 0){ h.price = j.c; h.updated = now; h.err = ''; } else { h.err = 'No quote returned'; fails++; }
+    } catch(e){ h.err = 'Could not reach Finnhub'; fails++; }
+  }
+  return fails;
+}
+async function refreshAll(){
+  if (busy) return; busy = true; status = 'Updating exchange rates and prices…'; render();
+  const okRates = await refreshRates();
+  const fails = await refreshPrices();
+  busy = false;
+  status = (okRates ? 'Exchange rates updated.' : 'Could not fetch exchange rates; using the last saved ones.') +
+    (S.holdings.some(h => h.kind !== 'manual') ? (fails ? ` ${fails} price${fails > 1 ? 's' : ''} failed (see Investments).` : ' Prices updated.') : '');
+  save(); render();
+}
+
+/* ---------- form dialog ---------- */
+function fieldHtml(f, v){
+  const label = typeof f.label === 'function' ? f.label(v) : f.label;
+  const val = v[f.k] ?? '';
+  const hint = typeof f.hint === 'function' ? f.hint(v) : f.hint;
+  let input;
+  if (f.type === 'select'){
+    const opts = typeof f.options === 'function' ? f.options(v) : f.options;
+    input = `<select name="${f.k}" ${f.refresh ? 'data-refresh' : ''}>${opts.map(([a, b]) => `<option value="${esc(a)}" ${a == val ? 'selected' : ''}>${esc(b)}</option>`).join('')}</select>`;
+  } else if (f.type === 'textarea'){
+    input = `<textarea name="${f.k}" rows="3">${esc(val)}</textarea>`;
+  } else {
+    input = `<input name="${f.k}" type="${f.type || 'text'}" ${f.type === 'number' ? 'step="any"' : ''} value="${esc(val)}" ${f.list ? `list="${f.list}"` : ''} ${f.ph ? `placeholder="${esc(f.ph)}"` : ''}>`;
+  }
+  return `<label class="fld"><span>${esc(label)}</span>${input}${hint ? `<small>${esc(hint)}</small>` : ''}</label>`;
+}
+function openForm(cfg){
+  const dlg = $('#dlg'); let vals = Object.assign({}, cfg.values);
+  const visible = () => cfg.fields.filter(f => !f.showIf || f.showIf(vals));
+  const read = () => {
+    const out = Object.assign({}, vals);
+    for (const f of visible()){
+      const el = dlg.querySelector(`[name="${f.k}"]`); if (!el) continue;
+      if (f.type === 'number') out[f.k] = el.value === '' ? '' : parseFloat(el.value);
+      else out[f.k] = f.upper ? el.value.trim().toUpperCase() : el.value.trim();
+    }
+    return out;
+  };
+  const draw = () => {
+    dlg.innerHTML = `<form id="frm" novalidate><h2>${esc(cfg.title)}</h2>${visible().map(f => fieldHtml(f, vals)).join('')}
+      <div class="row end">${cfg.onDelete ? '<button type="button" class="btn danger" data-f="del">Delete</button>' : ''}<span class="grow"></span>
+      <button type="button" class="btn ghost" data-f="cancel">Cancel</button><button class="btn" type="submit">${cfg.saveLabel || 'Save'}</button></div>
+      <p class="err" id="ferr" role="alert"></p></form>`;
+  };
+  dlg.onclick = e => {
+    const b = e.target.closest('[data-f]'); if (!b) return;
+    if (b.dataset.f === 'cancel') dlg.close();
+    if (b.dataset.f === 'del' && confirm('Delete this? This cannot be undone.')){ const err = cfg.onDelete(); if (err) $('#ferr').textContent = err; else { dlg.close(); save(); render(); } }
+  };
+  dlg.onchange = e => { if (e.target.hasAttribute('data-refresh')){ vals = read(); draw(); } };
+  dlg.onsubmit = e => {
+    e.preventDefault(); const v = read();
+    for (const f of visible()){
+      if (f.req && (v[f.k] === '' || v[f.k] === undefined || (f.type === 'number' && isNaN(v[f.k])))){ $('#ferr').textContent = 'Fill in: ' + (typeof f.label === 'function' ? f.label(v) : f.label); return; }
+    }
+    const err = cfg.onSave(v); if (err){ $('#ferr').textContent = err; return; }
+    dlg.close(); save(); render();
+  };
+  draw(); dlg.showModal();
+}
+const acctOptions = () => S.accounts.map(a => [a.id, `${a.name} (${a.currency})`]);
+const curField = (k = 'currency') => ({ k, label: 'Currency', req: 1, upper: 1, list: 'curs', ph: 'e.g. GBP' });
+function upsert(list, id, v){ if (id){ const i = list.findIndex(x => x.id === id); list[i] = Object.assign(list[i], v); } else list.push(Object.assign({ id: uid() }, v)); }
+
+/* ---------- forms per entity ---------- */
+function txForm(id){
+  if (!S.accounts.length){ alert('Add an account first.'); return; }
+  const t = id ? S.tx.find(x => x.id === id) : { type: 'expense', date: todayStr(), accountId: S.accounts[0].id, toAccountId: (S.accounts[1] || S.accounts[0]).id, amount: '', category: '', note: '' };
+  const cur = k => acct(k)?.currency || '';
+  openForm({
+    title: id ? 'Edit transaction' : 'Add transaction', values: t,
+    fields: [
+      { k: 'type', label: 'Type', type: 'select', refresh: 1, options: [['expense','Expense'],['income','Income'],['transfer','Transfer between accounts']] },
+      { k: 'date', label: 'Date', type: 'date', req: 1 },
+      { k: 'accountId', label: v => v.type === 'income' ? 'Paid into' : v.type === 'transfer' ? 'From account' : 'Paid from', type: 'select', refresh: 1, options: acctOptions() },
+      { k: 'amount', label: v => `Amount (${cur(v.accountId)})`, type: 'number', req: 1 },
+      { k: 'toAccountId', label: 'To account', type: 'select', refresh: 1, options: acctOptions(), showIf: v => v.type === 'transfer' },
+      { k: 'toAmount', label: v => `Amount received (${cur(v.toAccountId)})`, type: 'number', hint: 'Leave blank to use the current exchange rate.', showIf: v => v.type === 'transfer' && cur(v.accountId) !== cur(v.toAccountId) },
+      { k: 'category', label: 'Category', type: 'select', showIf: v => v.type !== 'transfer', options: v => [['', 'Uncategorised'], ...(v.type === 'income' ? S.incomeCats : S.expenseCats).map(c => [c, c])] },
+      { k: 'note', label: 'Note' }
+    ],
+    onDelete: id ? () => { S.tx = S.tx.filter(x => x.id !== id); } : null,
+    onSave: v => {
+      v.amount = Math.abs(v.amount);
+      if (v.type === 'transfer'){
+        if (v.accountId === v.toAccountId) return 'Choose two different accounts.';
+        const fa = acct(v.accountId), ta = acct(v.toAccountId);
+        if (fa.currency === ta.currency) v.toAmount = v.amount;
+        else if (!v.toAmount){ const c = conv(v.amount, fa.currency, ta.currency); if (isNaN(c)) return 'No exchange rate yet. Enter the received amount.'; v.toAmount = Math.round(c * 100) / 100; }
+        v.category = '';
+      } else { delete v.toAccountId; delete v.toAmount; }
+      upsert(S.tx, id, v);
+    }
+  });
+}
+function acctForm(id){
+  const a = id ? acct(id) : { name: '', currency: S.base, type: 'Current', opening: 0 };
+  openForm({
+    title: id ? 'Edit account' : 'Add account', values: a,
+    fields: [
+      { k: 'name', label: 'Account name', req: 1, ph: 'e.g. Monzo, Maybank savings' },
+      curField(),
+      { k: 'type', label: 'Type', type: 'select', options: ['Current','Savings','Cash','Brokerage cash','Other'].map(x => [x, x]) },
+      { k: 'opening', label: 'Opening balance (today)', type: 'number', req: 1, hint: 'Balance before any transactions you log here.' }
+    ],
+    onDelete: id ? () => {
+      if (S.tx.some(t => t.accountId === id || t.toAccountId === id)) return 'This account has transactions. Delete or move them first.';
+      S.accounts = S.accounts.filter(x => x.id !== id);
+    } : null,
+    onSave: v => { if (!/^[A-Z]{3}$/.test(v.currency)) return 'Use a 3-letter currency code, e.g. GBP.'; upsert(S.accounts, id, v); if (!rate(v.currency)) refreshRates().then(() => { save(); render(); }); }
+  });
+}
+function holdForm(id){
+  const h = id ? S.holdings.find(x => x.id === id) : { name: '', kind: 'stock', symbol: '', qty: '', cost: '', currency: 'USD', price: '' };
+  openForm({
+    title: id ? 'Edit holding' : 'Add holding', values: h,
+    fields: [
+      { k: 'name', label: 'Name', req: 1, ph: 'e.g. Apple, Bitcoin, Vanguard FTSE All-World' },
+      { k: 'kind', label: 'Price source', type: 'select', refresh: 1, options: [['stock','Stock / ETF (Finnhub)'],['crypto','Crypto (CoinGecko)'],['manual','Manual price']] },
+      { k: 'symbol', label: v => v.kind === 'crypto' ? 'CoinGecko coin id' : 'Ticker symbol', showIf: v => v.kind !== 'manual', req: 1, hint: v => v.kind === 'crypto' ? 'The id in the coin\'s CoinGecko URL, e.g. bitcoin, ethereum, solana.' : 'US-listed tickers work on Finnhub\'s free plan, e.g. AAPL, VOO.' },
+      curField(),
+      { k: 'qty', label: 'Units held', type: 'number', req: 1 },
+      { k: 'cost', label: v => `Total amount paid (${v.currency || ''})`, type: 'number', hint: 'Your cost basis, used to work out gain or loss.' },
+      { k: 'price', label: v => v.kind === 'manual' ? 'Price per unit' : 'Price per unit (used until the first live update)', type: 'number', req: 0 }
+    ],
+    onDelete: id ? () => { S.holdings = S.holdings.filter(x => x.id !== id); } : null,
+    onSave: v => { if (!/^[A-Z]{3}$/.test(v.currency)) return 'Use a 3-letter currency code, e.g. USD.'; upsert(S.holdings, id, v); if (!rate(v.currency)) refreshRates().then(() => { save(); render(); }); }
+  });
+}
+function goalForm(id){
+  const g = id ? S.goals.find(x => x.id === id) : { name: '', target: '', currency: S.base, deadline: '', linkedAccountId: '', saved: 0 };
+  openForm({
+    title: id ? 'Edit savings goal' : 'Add savings goal', values: g,
+    fields: [
+      { k: 'name', label: 'Goal', req: 1, ph: 'e.g. Emergency fund' },
+      { k: 'target', label: 'Target amount', type: 'number', req: 1 },
+      curField(),
+      { k: 'deadline', label: 'Target date', type: 'date' },
+      { k: 'linkedAccountId', label: 'Track progress with', type: 'select', refresh: 1, options: [['', 'Amounts I add manually'], ...S.accounts.map(a => [a.id, `Balance of ${a.name} (${a.currency})`])] },
+      { k: 'saved', label: 'Saved so far', type: 'number', showIf: v => !v.linkedAccountId }
+    ],
+    onDelete: id ? () => { S.goals = S.goals.filter(x => x.id !== id); } : null,
+    onSave: v => { if (!/^[A-Z]{3}$/.test(v.currency)) return 'Use a 3-letter currency code.'; v.saved = v.saved || 0; upsert(S.goals, id, v); }
+  });
+}
+function contributeForm(id){
+  const g = S.goals.find(x => x.id === id);
+  openForm({
+    title: 'Add to ' + g.name, values: { amount: '' }, saveLabel: 'Add',
+    fields: [{ k: 'amount', label: `Amount (${g.currency})`, type: 'number', req: 1, hint: 'Use a negative number to take money out.' }],
+    onSave: v => { g.saved = (+g.saved || 0) + v.amount; }
+  });
+}
+function bigForm(id){
+  if (!S.accounts.length){ alert('Add an account first.'); return; }
+  const b = id ? S.big.find(x => x.id === id) : { name: '', cost: '', currency: S.base, date: addMonths(ym(new Date()), 6), accountId: S.accounts[0].id };
+  openForm({
+    title: id ? 'Edit big purchase' : 'Add big purchase', values: b,
+    fields: [
+      { k: 'name', label: 'What is it?', req: 1, ph: 'e.g. Laptop, tuition deposit, flights home' },
+      { k: 'cost', label: 'Estimated cost', type: 'number', req: 1 },
+      curField(),
+      { k: 'date', label: 'When will you pay?', type: 'month', req: 1 },
+      { k: 'accountId', label: 'Pay from', type: 'select', options: acctOptions() }
+    ],
+    onDelete: id ? () => { S.big = S.big.filter(x => x.id !== id); } : null,
+    onSave: v => { if (!/^[A-Z]{3}$/.test(v.currency)) return 'Use a 3-letter currency code.'; upsert(S.big, id, v); }
+  });
+}
+function settingsForm(){
+  const manual = Object.entries(S.manualRates).map(([k, v]) => `${k}=${v}`).join(', ');
+  openForm({
+    title: 'Settings',
+    values: { base: S.base, finnhubKey: S.finnhubKey, incomeCats: S.incomeCats.join(', '), expenseCats: S.expenseCats.join(', '), manual },
+    fields: [
+      { k: 'base', label: 'Main currency (totals are shown in this)', req: 1, upper: 1, list: 'curs' },
+      { k: 'finnhubKey', label: 'Finnhub API key (for stock and ETF prices)', hint: 'Free at finnhub.io. Stored only in this browser.' },
+      { k: 'incomeCats', label: 'Income categories (comma separated)', type: 'textarea' },
+      { k: 'expenseCats', label: 'Expense categories (comma separated)', type: 'textarea' },
+      { k: 'manual', label: 'Manual exchange rates (fallback)', hint: 'Units of each currency per 1 of your main currency, e.g. MYR=5.9, IDR=21000. Used only if live rates are missing.' }
+    ],
+    onSave: v => {
+      if (!/^[A-Z]{3}$/.test(v.base)) return 'Use a 3-letter currency code for the main currency.';
+      const list = s => s.split(',').map(x => x.trim()).filter(Boolean);
+      const manualRates = {};
+      for (const p of list(v.manual)){ const [k, n] = p.split('='); const num = parseFloat(n); if (k && num > 0) manualRates[k.trim().toUpperCase()] = num; }
+      const baseChanged = v.base !== S.base;
+      S.base = v.base; S.finnhubKey = v.finnhubKey; S.incomeCats = list(v.incomeCats); S.expenseCats = list(v.expenseCats); S.manualRates = manualRates;
+      if (baseChanged){ S.rates = {}; S.ratesDate = ''; refreshRates().then(() => { save(); render(); }); }
+    }
+  });
+}
+
+/* ---------- views ---------- */
+function barChart(keys){
+  const data = keys.map(k => Object.assign({ k }, monthTotals(k)));
+  const max = Math.max(1, ...data.flatMap(d => [d.inc, d.exp]));
+  const W = 640, H = 200, pb = 26, ph = H - pb - 8, gw = W / data.length, bw = 24;
+  let s = `<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Income and expenses by month">`;
+  data.forEach((d, i) => {
+    const x = i * gw + gw / 2, hi = d.inc / max * ph, he = d.exp / max * ph;
+    s += `<rect class="inc" x="${x - bw - 2}" y="${H - pb - hi}" width="${bw}" height="${hi}" rx="3"><title>Income ${fmt(d.inc, S.base)}</title></rect>`;
+    s += `<rect class="exp" x="${x + 2}" y="${H - pb - he}" width="${bw}" height="${he}" rx="3"><title>Expenses ${fmt(d.exp, S.base)}</title></rect>`;
+    s += `<text x="${x}" y="${H - 8}" text-anchor="middle">${monthLabel(d.k)}</text>`;
+  });
+  return s + '</svg>';
+}
+function viewOverview(){
+  const cash = cashTotal(), inv = investTotal(), nw = cash + inv;
+  const parts = S.accounts.map((a, i) => ({ label: `${a.name} ${a.currency}`, val: toBase(balance(a), a.currency), c: COLORS[i % COLORS.length], native: fmt(balance(a), a.currency) })).filter(p => p.val > 0);
+  if (inv > 0) parts.push({ label: 'Investments', val: inv, c: '#5C6F73', native: '' });
+  const tot = parts.reduce((s, p) => s + p.val, 0) || 1;
+  const mt = monthTotals(month), net = mt.inc - mt.exp;
+  const keys = Array.from({ length: 6 }, (_, i) => addMonths(month, i - 5));
+
+  const ex = S.tx.filter(t => t.type === 'expense' && t.date.startsWith(month));
+  const catBase = {}; const matrix = {}; const usedAcc = new Set();
+  ex.forEach(t => {
+    const a = acct(t.accountId); if (!a) return; const c = t.category || 'Uncategorised';
+    catBase[c] = (catBase[c] || 0) + toBase(t.amount, a.currency);
+    (matrix[c] ||= {}); matrix[c][a.id] = (matrix[c][a.id] || 0) + t.amount; usedAcc.add(a.id);
+  });
+  const cats = Object.entries(catBase).sort((a, b) => b[1] - a[1]);
+  const maxCat = cats.length ? cats[0][1] : 1;
+  const accCols = S.accounts.filter(a => usedAcc.has(a.id));
+  const accTot = a => ex.filter(t => t.accountId === a.id).reduce((s, t) => s + t.amount, 0);
+
+  return `
+  <section class="hero">
+    <div class="lbl">Net worth in ${S.base}</div>
+    <div class="big">${fmt(nw, S.base)}</div>
+    <div class="seg" role="img" aria-label="Net worth split by account">${parts.map(p => `<i style="width:${p.val / tot * 100}%;background:${p.c}" title="${esc(p.label)}"></i>`).join('')}</div>
+    <div class="legend">${parts.map(p => `<span class="num"><b style="background:${p.c}"></b>${esc(p.label)} ${p.native ? esc(p.native) + ' · ' : ''}${fmt(p.val, S.base)}</span>`).join('') || '<span class="muted">Add an account to see your money split by account and currency.</span>'}</div>
+  </section>
+
+  <div class="head-row" style="margin-top:34px"><label class="row muted">Month <input type="month" data-month value="${month}" style="width:auto"></label></div>
+  <div class="kpis">
+    <div><div class="k">Income</div><div class="v pos">${fmt(mt.inc, S.base)}</div></div>
+    <div><div class="k">Expenses</div><div class="v neg">${fmt(mt.exp, S.base)}</div></div>
+    <div><div class="k">Left over</div><div class="v ${net >= 0 ? 'pos' : 'neg'}">${fmt(net, S.base)}</div></div>
+  </div>
+
+  <div class="split">
+    <section class="block"><h2>Income and expenses, last 6 months</h2>${barChart(keys)}
+      <div class="legend"><span><b style="background:var(--inc)"></b>Income</span><span><b style="background:var(--exp)"></b>Expenses</span></div></section>
+    <section class="block"><h2>Spending by category</h2>
+      ${cats.length ? `<div class="bars">${cats.map(([c, v]) => `<div class="bar"><div class="t"><span>${esc(c)}</span><span class="num">${fmt(v, S.base)}</span></div><div class="tr"><i class="warn" style="width:${v / maxCat * 100}%"></i></div></div>`).join('')}</div>` : '<p class="empty">No expenses logged for this month.</p>'}
+    </section>
+  </div>
+
+  <section class="block"><h2>Where the spending came out of</h2>
+    ${cats.length ? `<div class="tablewrap"><table><thead><tr><th>Category</th>${accCols.map(a => `<th class="r">${esc(a.name)} (${a.currency})</th>`).join('')}<th class="r">Total in ${S.base}</th></tr></thead>
+      <tbody>${cats.map(([c, v]) => `<tr><td>${esc(c)}</td>${accCols.map(a => `<td class="r">${matrix[c][a.id] ? fmt(matrix[c][a.id], a.currency) : ''}</td>`).join('')}<td class="r">${fmt(v, S.base)}</td></tr>`).join('')}</tbody>
+      <tfoot><tr><td>Total</td>${accCols.map(a => `<td class="r">${fmt(accTot(a), a.currency)}</td>`).join('')}<td class="r">${fmt(mt.exp, S.base)}</td></tr></tfoot></table></div>` : '<p class="empty">Once you log expenses, you will see which account each one was paid from.</p>'}
+  </section>`;
+}
+function viewTransactions(){
+  let list = S.tx.filter(t => (!filt.month || t.date.startsWith(filt.month)) && (!filt.type || t.type === filt.type) && (!filt.acct || t.accountId === filt.acct || t.toAccountId === filt.acct))
+    .sort((a, b) => b.date.localeCompare(a.date));
+  const rows = list.map(t => {
+    const a = acct(t.accountId); if (!a) return '';
+    let amt, base = '', desc = esc(t.note || t.category || '');
+    if (t.type === 'transfer'){
+      const ta = acct(t.toAccountId);
+      amt = `<span class="muted">${fmt(t.amount, a.currency)}${ta && ta.currency !== a.currency ? ' → ' + fmt(t.toAmount, ta.currency) : ''}</span>`;
+      desc = `Transfer to ${esc(ta?.name || '?')}${t.note ? ': ' + esc(t.note) : ''}`;
+    } else {
+      const sign = t.type === 'income' ? 1 : -1;
+      amt = `<span class="${sign > 0 ? 'pos' : 'neg'}">${sign > 0 ? '+' : '−'}${fmt(t.amount, a.currency)}</span>`;
+      if (a.currency !== S.base) base = fmt(toBase(t.amount, a.currency) * sign, S.base);
+    }
+    return `<tr class="click" data-a="edit-tx" data-id="${t.id}"><td class="num">${t.date}</td><td>${desc}</td><td>${esc(a.name)}</td><td>${t.type === 'transfer' ? 'Transfer' : esc(t.category || 'Uncategorised')}</td><td class="r">${amt}</td><td class="r muted">${base}</td></tr>`;
+  }).join('');
+  return `<div class="head-row"><h2>Transactions</h2><button class="btn" data-a="add-tx">Add transaction</button></div>
+  <div class="filters">
+    <input type="month" data-filter="month" value="${filt.month}" aria-label="Month">
+    <select data-filter="acct" aria-label="Account"><option value="">All accounts</option>${S.accounts.map(a => `<option value="${a.id}" ${filt.acct === a.id ? 'selected' : ''}>${esc(a.name)}</option>`).join('')}</select>
+    <select data-filter="type" aria-label="Type">${[['', 'All types'], ['income', 'Income'], ['expense', 'Expenses'], ['transfer', 'Transfers']].map(([v, l]) => `<option value="${v}" ${filt.type === v ? 'selected' : ''}>${l}</option>`).join('')}</select>
+    ${(filt.month || filt.acct || filt.type) ? '<button class="btn ghost small" data-a="clear-filters">Clear filters</button>' : ''}
+  </div>
+  ${rows ? `<div class="tablewrap"><table><thead><tr><th>Date</th><th>Details</th><th>Account</th><th>Category</th><th class="r">Amount</th><th class="r">In ${S.base}</th></tr></thead><tbody>${rows}</tbody></table></div>` : '<p class="empty">No transactions match. Add income, expenses and transfers between your accounts here.</p>'}`;
+}
+function viewAccounts(){
+  if (!S.accounts.length) return `<div class="head-row"><h2>Accounts</h2><button class="btn" data-a="add-acct">Add account</button></div><p class="empty">Add each bank, savings or cash account in its own currency.</p>`;
+  const cur = ym(new Date());
+  const rows = S.accounts.map((a, i) => {
+    let inc = 0, exp = 0, tin = 0, tout = 0, expM = 0;
+    S.tx.forEach(t => {
+      if (t.accountId === a.id){ if (t.type === 'income') inc += t.amount; else if (t.type === 'expense'){ exp += t.amount; if (t.date.startsWith(cur)) expM += t.amount; } else tout += t.amount; }
+      if (t.type === 'transfer' && t.toAccountId === a.id) tin += t.toAmount ?? t.amount;
+    });
+    const b = balance(a);
+    return `<tr class="click" data-a="edit-acct" data-id="${a.id}"><td><span style="border-left:5px solid ${COLORS[i % COLORS.length]};padding-left:8px">${esc(a.name)}</span><div class="muted" style="padding-left:13px">${esc(a.type)}, ${a.currency}</div></td>
+      <td class="r">${fmt(a.opening || 0, a.currency)}</td><td class="r">${fmt(inc, a.currency)}</td><td class="r">${fmt(exp, a.currency)}</td><td class="r">${fmt(tin - tout, a.currency)}</td>
+      <td class="r"><strong>${fmt(b, a.currency)}</strong>${a.currency !== S.base ? `<div class="muted">${fmt(toBase(b, a.currency), S.base)}</div>` : ''}</td><td class="r">${fmt(expM, a.currency)}</td></tr>`;
+  }).join('');
+  return `<div class="head-row"><h2>Accounts and savings</h2><button class="btn" data-a="add-acct">Add account</button></div>
+  <div class="tablewrap"><table><thead><tr><th>Account</th><th class="r">Opening</th><th class="r">Income in</th><th class="r">Expenses out</th><th class="r">Net transfers</th><th class="r">Balance now</th><th class="r">Spent this month</th></tr></thead><tbody>${rows}</tbody>
+  <tfoot><tr><td>Total in ${S.base}</td><td></td><td></td><td></td><td></td><td class="r">${fmt(cashTotal(), S.base)}</td><td></td></tr></tfoot></table></div>`;
+}
+function viewInvestments(){
+  const rows = S.holdings.map(h => {
+    const val = holdingValue(h), vb = toBase(val, h.currency), cost = +h.cost || 0, pl = val - cost;
+    return `<tr class="click" data-a="edit-hold" data-id="${h.id}"><td>${esc(h.name)}<div class="muted">${h.kind === 'manual' ? 'Manual price' : esc(h.symbol)}</div></td>
+      <td class="r">${h.qty}</td><td class="r">${h.price ? fmt(h.price, h.currency, h.price < 10 ? 4 : 2) : '–'}${h.err ? `<div class="neg" style="font-size:12px">${esc(h.err)}</div>` : ''}</td>
+      <td class="r">${fmt(val, h.currency)}</td><td class="r">${fmt(vb, S.base)}</td>
+      <td class="r ${pl >= 0 ? 'pos' : 'neg'}">${cost ? (pl >= 0 ? '+' : '−') + fmt(Math.abs(pl), h.currency) + ` (${(pl / cost * 100).toFixed(1)}%)` : ''}</td>
+      <td class="r muted">${h.updated ? new Date(h.updated).toLocaleString(undefined, { dateStyle: 'short', timeStyle: 'short' }) : ''}</td></tr>`;
+  }).join('');
+  const tot = investTotal(), cost = S.holdings.reduce((s, h) => s + toBase(+h.cost || 0, h.currency), 0);
+  return `<div class="head-row"><h2>Investments</h2><div class="row"><button class="btn ghost" data-a="refresh" ${busy ? 'disabled' : ''}>Update prices</button><button class="btn" data-a="add-hold">Add holding</button></div></div>
+  ${rows ? `<div class="tablewrap"><table><thead><tr><th>Holding</th><th class="r">Units</th><th class="r">Price</th><th class="r">Value</th><th class="r">In ${S.base}</th><th class="r">Gain / loss</th><th class="r">Updated</th></tr></thead><tbody>${rows}</tbody>
+  <tfoot><tr><td>Total</td><td></td><td></td><td></td><td class="r">${fmt(tot, S.base)}</td><td class="r ${tot - cost >= 0 ? 'pos' : 'neg'}">${cost ? fmt(tot - cost, S.base) : ''}</td><td></td></tr></tfoot></table></div>` : '<p class="empty">Add stocks, ETFs or crypto. Prices are pulled automatically when the site opens and every 15 minutes.</p>'}
+  <p class="status">${esc(status)}${S.finnhubKey ? '' : ' Stock prices need a free Finnhub key: open Settings to add it.'}</p>`;
+}
+function viewGoals(){
+  const items = S.goals.map(g => {
+    const p = goalProgress(g);
+    return `<div class="item"><div class="h"><strong>${esc(g.name)}</strong><span class="num">${fmt(p.saved, g.currency)} of ${fmt(g.target, g.currency)}</span></div>
+      <div class="bar"><div class="tr"><i style="width:${p.pct}%"></i></div></div>
+      <div class="row muted"><span>${p.pct.toFixed(0)}% saved</span>${g.deadline ? `<span>Target ${new Date(g.deadline).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}</span>` : ''}
+        ${g.deadline && p.left > 0 ? `<span>Save ${fmt(p.perMonth, g.currency)} a month to get there</span>` : ''}${p.left === 0 ? '<span class="pos">Goal reached</span>' : ''}</div>
+      <div class="row">${g.linkedAccountId ? `<span class="pill">Tracks ${esc(acct(g.linkedAccountId)?.name || 'account')}</span>` : `<button class="btn small" data-a="contribute" data-id="${g.id}">Add money</button>`}<button class="btn ghost small" data-a="edit-goal" data-id="${g.id}">Edit</button></div></div>`;
+  }).join('');
+  return `<div class="head-row"><h2>Savings goals</h2><button class="btn" data-a="add-goal">Add goal</button></div>${items || '<p class="empty">Set a target, a date, and either link a savings account or add money by hand.</p>'}`;
+}
+function lineChart(rows){
+  const W = 720, H = 230, pl = 8, pr = 8, pt = 14, pb = 26;
+  const vals = rows.map(r => r.bal); const lo = Math.min(0, ...vals), hi = Math.max(0, ...vals) || 1;
+  const x = i => pl + i / (rows.length - 1) * (W - pl - pr);
+  const y = v => pt + (hi - v) / (hi - lo || 1) * (H - pt - pb);
+  let s = `<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Projected cash balance over 24 months">`;
+  s += `<line x1="${pl}" x2="${W - pr}" y1="${y(0)}" y2="${y(0)}" stroke="var(--line)" stroke-width="2"/>`;
+  s += `<polyline fill="none" stroke="var(--accent)" stroke-width="3" stroke-linejoin="round" points="${rows.map((r, i) => x(i) + ',' + y(r.bal)).join(' ')}"/>`;
+  rows.forEach((r, i) => {
+    if (r.due.length) s += `<circle cx="${x(i)}" cy="${y(r.bal)}" r="6" fill="var(--exp)" stroke="var(--panel)" stroke-width="2"><title>${esc(r.due.map(b => b.name).join(', '))}: ${fmt(r.out, S.base)}</title></circle>`;
+    if (i % 3 === 0) s += `<text x="${x(i)}" y="${H - 8}" text-anchor="middle">${monthLabel(r.k)}</text>`;
+  });
+  return s + '</svg>';
+}
+function viewBig(){
+  const P = projection(), funding = bigFunding(), dip = P.rows.find(r => r.bal < 0);
+  const rows = funding.map(f => {
+    if (!f.a) return `<tr class="click" data-a="edit-big" data-id="${f.b.id}"><td>${esc(f.b.name)}</td><td colspan="5" class="neg">Funding account missing. Edit to choose one.</td></tr>`;
+    return `<tr class="click" data-a="edit-big" data-id="${f.b.id}"><td>${esc(f.b.name)}</td><td>${monthLabel(f.b.date, true)}</td><td class="r">${fmt(f.b.cost, f.b.currency)}</td><td>${esc(f.a.name)} (${f.a.currency})</td>
+      <td>${f.unknown ? '<span class="pill">No exchange rate</span>' : f.covered ? '<span class="pill ok">Covered by balance</span>' : `<span class="pill no">Short ${fmt(f.short, f.a.currency)}</span>`}</td>
+      <td class="r">${f.unknown || f.covered ? '' : fmt(f.perMonth, S.base) + ' a month'}</td></tr>`;
+  }).join('');
+  return `<div class="head-row"><h2>Big purchases</h2><button class="btn" data-a="add-big">Add big purchase</button></div>
+  <p class="muted" style="max-width:62ch">The line shows your total cash across all accounts (in ${S.base}) if you keep saving at the monthly rate below and pay for each purchase when it is due. Red dots mark purchases.</p>
+  <div class="row" style="margin:12px 0"><label class="row">Monthly saving assumed (${S.base}) <input type="number" step="any" data-net value="${S.assumedNet ?? ''}" placeholder="${Math.round(autoNet())}" style="width:130px"></label>
+    <span class="muted">${S.assumedNet == null ? 'Using your recent average' : 'Set by you'}. Clear the box to use the average.</span></div>
+  ${S.big.length ? lineChart(P.rows) : ''}
+  ${dip ? `<p class="warn-note">Your cash would drop below zero around ${monthLabel(dip.k, true)} on this plan.</p>` : (S.big.length ? '<p class="pos">Cash stays above zero for the next 24 months on this plan.</p>' : '')}
+  ${rows ? `<h3 style="margin:22px 0 8px">Can each account cover its purchases?</h3><div class="tablewrap"><table><thead><tr><th>Purchase</th><th>Due</th><th class="r">Cost</th><th>Paid from</th><th>Balance today</th><th class="r">To save</th></tr></thead><tbody>${rows}</tbody></table></div>
+  <p class="status">Purchases from the same account are checked in date order against today's balance, before any future saving.</p>` : '<p class="empty">Add the large costs you can see coming, such as tuition, flights or a laptop, and which account will pay.</p>'}`;
+}
+
+/* ---------- shell ---------- */
+const TABS = [['overview', 'Overview'], ['transactions', 'Transactions'], ['accounts', 'Accounts'], ['investments', 'Investments'], ['goals', 'Savings goals'], ['big', 'Big purchases']];
+function render(){
+  const missing = missingRates();
+  const side = S.accounts.map((a, i) => {
+    const b = balance(a);
+    return `<button class="acct" data-a="edit-acct" data-id="${a.id}" style="--c:${COLORS[i % COLORS.length]}"><span class="an">${esc(a.name)}</span><span class="ac">${a.currency}</span><span class="ab">${fmt(b, a.currency)}</span>${a.currency !== S.base ? `<span class="abb">${fmt(toBase(b, a.currency), S.base)}</span>` : ''}</button>`;
+  }).join('') || '<p class="muted">No accounts yet.</p>';
+  const views = { overview: viewOverview, transactions: viewTransactions, accounts: viewAccounts, investments: viewInvestments, goals: viewGoals, big: viewBig };
+  const body = S.accounts.length || view === 'accounts' ? views[view]() : `<section class="hero"><div class="big">Start with an account</div><p class="muted" style="max-width:56ch">Add each account in its own currency, then log income and expenses against it. Everything is converted to ${S.base} for totals.</p>
+    <div class="row"><button class="btn" data-a="add-acct">Add account</button><button class="btn ghost" data-a="sample">Load sample data</button></div></section>`;
+  $('#app').innerHTML = `
+  <aside>
+    <div class="brand">Ledgerline</div>
+    <div><div class="side-h" style="margin-bottom:8px">Accounts</div>${side}<button class="btn ghost small" data-a="add-acct">Add account</button></div>
+    <div class="side-foot">
+      <div>${S.ratesDate ? 'Exchange rates as of ' + S.ratesDate : 'No live exchange rates yet'}</div>
+      <div><button class="btn ghost small" data-a="refresh" ${busy ? 'disabled' : ''}>${busy ? 'Updating…' : 'Update rates and prices'}</button></div>
+    </div>
+  </aside>
+  <main>
+    <div class="top">
+      <nav class="tabs" aria-label="Sections">${TABS.map(([k, l]) => `<button data-a="nav" data-id="${k}" ${view === k ? 'aria-current="page"' : ''}>${l}</button>`).join('')}</nav>
+      <div class="tools"><button class="btn ghost small" data-a="add-tx">Add transaction</button><button class="btn ghost small" data-a="settings">Settings</button><button class="btn ghost small" data-a="export">Back up</button><button class="btn ghost small" data-a="import">Restore</button></div>
+    </div>
+    ${missing.length ? `<p class="warn-note">No exchange rate for ${missing.join(', ')} yet, so those amounts are counted at face value. Update rates, or add manual rates in Settings.</p>` : ''}
+    ${body}
+  </main>`;
+}
+
+/* ---------- actions ---------- */
+function act(a, id){
+  ({
+    nav: () => { view = id; render(); scrollTo(0, 0); },
+    'add-tx': () => txForm(), 'edit-tx': () => txForm(id),
+    'add-acct': () => acctForm(), 'edit-acct': () => acctForm(id),
+    'add-hold': () => holdForm(), 'edit-hold': () => holdForm(id),
+    'add-goal': () => goalForm(), 'edit-goal': () => goalForm(id), contribute: () => contributeForm(id),
+    'add-big': () => bigForm(), 'edit-big': () => bigForm(id),
+    settings: settingsForm, refresh: refreshAll, sample: loadSample,
+    'clear-filters': () => { filt = { month: '', acct: '', type: '' }; render(); },
+    export: exportData, import: () => $('#imp').click()
+  })[a]?.();
+}
+function exportData(){
+  const blob = new Blob([JSON.stringify(S, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'ledgerline-backup-' + todayStr() + '.json'; a.click(); URL.revokeObjectURL(a.href);
+}
+function importData(file){
+  if (!file) return; const r = new FileReader();
+  r.onload = () => { try { const d = JSON.parse(r.result); if (!Array.isArray(d.accounts)) throw 0; if (!confirm('Replace everything currently in Ledgerline with this backup?')) return; S = Object.assign(defaults(), d); save(); render(); refreshAll(); } catch(e){ alert('That file is not a Ledgerline backup.'); } };
+  r.readAsText(file); $('#imp').value = '';
+}
+function loadSample(){
+  const d = (back, day) => { const x = new Date(); x.setMonth(x.getMonth() - back, day); return x.getFullYear() + '-' + String(x.getMonth() + 1).padStart(2, '0') + '-' + String(x.getDate()).padStart(2, '0'); };
+  const a1 = uid(), a2 = uid(), a3 = uid();
+  S.accounts = [{ id: a1, name: 'Everyday', currency: 'GBP', type: 'Current', opening: 850 }, { id: a2, name: 'Home savings', currency: 'MYR', type: 'Savings', opening: 6000 }, { id: a3, name: 'Brokerage cash', currency: 'USD', type: 'Brokerage cash', opening: 300 }];
+  const T = (back, day, type, accountId, amount, category, note, extra) => Object.assign({ id: uid(), date: d(back, day), type, accountId, amount, category, note }, extra || {});
+  S.tx = [];
+  for (let m = 3; m >= 0; m--){
+    S.tx.push(T(m, 2, 'income', a1, 1200, 'Scholarship', 'Termly stipend'), T(m, 3, 'income', a1, 450, 'Internship', ''),
+      T(m, 5, 'expense', a1, 520, 'Rent', 'College'), T(m, 9, 'expense', a1, 140, 'Groceries', ''), T(m, 14, 'expense', a1, 55, 'Eating out', ''),
+      T(m, 18, 'expense', a2, 180, 'Transport', 'Grab and train'), T(m, 21, 'expense', a1, 32, 'Subscriptions', ''),
+      T(m, 24, 'transfer', a1, 200, '', 'Savings top-up', { toAccountId: a2, toAmount: 1180 }));
+  }
+  S.holdings = [{ id: uid(), name: 'Apple', kind: 'stock', symbol: 'AAPL', qty: 4, cost: 700, currency: 'USD', price: 230 }, { id: uid(), name: 'Bitcoin', kind: 'crypto', symbol: 'bitcoin', qty: 0.01, cost: 500, currency: 'USD', price: 60000 }];
+  S.goals = [{ id: uid(), name: 'Emergency fund', target: 3000, currency: 'GBP', deadline: d(-10, 1), linkedAccountId: '', saved: 900 }];
+  S.big = [{ id: uid(), name: 'New laptop', cost: 1400, currency: 'GBP', date: addMonths(ym(new Date()), 4), accountId: a1 }, { id: uid(), name: 'Flights home', cost: 4200, currency: 'MYR', date: addMonths(ym(new Date()), 8), accountId: a2 }];
+  save(); refreshAll();
+}
+
+/* ---------- wiring ---------- */
+document.addEventListener('click', e => { const el = e.target.closest('[data-a]'); if (el) act(el.dataset.a, el.dataset.id); });
+document.addEventListener('change', e => {
+  const t = e.target;
+  if (t.dataset.filter){ filt[t.dataset.filter] = t.value; render(); }
+  else if (t.dataset.month !== undefined){ month = t.value || month; render(); }
+  else if (t.dataset.net !== undefined){ const v = t.value.trim(); S.assumedNet = v === '' ? null : parseFloat(v); save(); render(); }
+  else if (t.id === 'imp') importData(t.files[0]);
+});
+$('#curs').innerHTML = CURRENCIES.map(c => `<option value="${c}">`).join('');
+render();
+refreshAll();
+setInterval(() => { if (!busy && S.holdings.length) refreshAll(); }, 15 * 60 * 1000);
+</script>
+</body>
+</html>
